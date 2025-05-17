@@ -38,6 +38,7 @@ spark.sql(query1).show()
 
 # Câu 2: So sánh giá bán trung bình theo loại thân xe và tình trạng xe
 print("\n=== CÂU 2 ===")
+print("\n=== CÂU 2 ===")
 query2 = """
 SELECT IFNULL(body,'[No_Name]') as body, 
        IFNULL(condition, 0) AS condition_group,
@@ -110,6 +111,8 @@ LIMIT 20
 spark.sql(query6).show()
 
 # Câu 7: Ảnh hưởng của tình trạng xe đến giá sau khi điều chỉnh số km
+print("\n=== CÂU 7 ===")
+print("\n=== CÂU 7 ===")
 print("\n=== CÂU 7 ===")
 query7 = """
 SELECT condition_group, 
