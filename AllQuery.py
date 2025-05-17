@@ -147,7 +147,7 @@ ORDER BY year, price_ratio DESC
 spark.sql(query8).show()
 
 ### Câu 9: 
-print("\n=== CÂU 8 ===")
+print("\n=== CÂU 9 ===")
 query9 = """
 SELECT year, make,
        ROUND(AVG(sellingprice / mmr), 2) AS price_ratio,
