@@ -186,7 +186,7 @@ FROM car_prices
 WHERE mmr IS NOT NULL AND sellingprice IS NOT NULL
 GROUP BY year, make
 HAVING COUNT(*) > 100
-ORDER BY year, price_ratio DESC
+ORDER BY year DESC, price_ratio DESC
 """
 spark.sql(query9).show()
 
