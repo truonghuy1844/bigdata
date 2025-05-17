@@ -1,19 +1,36 @@
 from pyspark.sql import SparkSession
+from pyspark.sql.functions import to_timestamp, regexp_replace, year
 
-# Tạo Spark session
-spark = SparkSession.builder \
-    .appName("Read Car Prices CSV") \
-    .getOrCreate()
+# Khởi tạo SparkSession (nếu chưa có)
+spark = SparkSession.builder.appName("Car Prices").config("spark.sql.legacy.timeParserPolicy", "LEGACY").getOrCreate()
 
-# Đọc dữ liệu
+# Đọc file CSV
 df = spark.read.option("header", True).option("inferSchema", True).csv("car_prices.csv")
 
-# Tạo Temp View
-df.createOrReplaceTempView("car_prices")
+# Làm sạch saledate: bỏ phần "GMT-0800 (PST)"
+df_cleaned = df.withColumn(
+    "saledate_clean",
+    regexp_replace("saledate", "GMT.*", "")
+)
 
-# Hiển thị schema
+# Chuyển thành kiểu timestamp
+df_parsed = df_cleaned.withColumn(
+    "saledate_ts",
+    to_timestamp("saledate_clean", "EEE MMM dd yyyy HH:mm:ss")
+)
+
+# Trích xuất năm
+df_final = df_parsed.withColumn(
+    "sale_year",
+    year("saledate_ts")
+)
+
+# Tạo lại Temp View để dùng SQL
+df_final.createOrReplaceTempView("car_prices")
+
+# In schema để kiểm tra
 print("=== SCHEMA ===")
-df.printSchema()
+df_final.printSchema()
 
 # Câu 1: 5 Hãng xe có mức bán trung bình cao nhất trong mỗi năm
 print("\n=== CÂU 1 === TOP 5 hãng xe có mức bán giá thực tế trung bình cao nhất trong mỗi năm")
@@ -37,7 +54,6 @@ LIMIT 20
 spark.sql(query1).show()
 
 # Câu 2: So sánh giá bán trung bình theo loại thân xe và tình trạng xe
-print("\n=== CÂU 2 ===")
 print("\n=== CÂU 2 ===")
 query2 = """
 SELECT IFNULL(body,'[No_Name]') as body, 
@@ -116,21 +132,34 @@ spark.sql(query6).show()
 
 # Câu 7: Ảnh hưởng của tình trạng xe đến giá sau khi điều chỉnh số km
 print("\n=== CÂU 7 ===")
-query = """
-SELECT 
-    make,
-    model,
-    year,
-    COUNT(*) AS total_sales,
-    ROUND(AVG(sellingprice), 2) AS avg_selling_price,
-    ROUND(STDDEV(sellingprice), 2) AS stddev_price
-FROM car_prices
-WHERE sellingprice IS NOT NULL AND year IS NOT NULL
-GROUP BY make, model, year
-HAVING COUNT(*) > 10
-ORDER BY make, model, year
-"""
+query7 =( """
+WITH sorento_yearly_sales AS (
+    SELECT
+        model,
+        year,
+        COUNT(*) AS total_sales,
+        ROUND(AVG(sellingprice), 2) AS avg_selling_price
+    FROM car_prices
+    WHERE sellingprice IS NOT NULL
+      AND year IS NOT NULL
+      AND sale_year = 2015
+      AND model = 'Sorento'
+    GROUP BY model, year
+)
 
+SELECT 
+    year,
+    avg_selling_price,
+    LAG(avg_selling_price) OVER (PARTITION BY model ORDER BY year DESC) AS prev_year_price,
+    ROUND(
+        (avg_selling_price - LAG(avg_selling_price) OVER (PARTITION BY model ORDER BY year DESC)) 
+        / LAG(avg_selling_price) OVER (PARTITION BY model ORDER BY year DESC) * 100, 2
+    ) AS percent_drop
+FROM sorento_yearly_sales
+ORDER BY year DESC
+
+"""
+)
 spark.sql(query7).show()
 
 # Câu 8: Hãng xe giữ giá tốt nhất theo thời gian
@@ -143,7 +172,7 @@ FROM car_prices
 WHERE mmr IS NOT NULL AND sellingprice IS NOT NULL
 GROUP BY year, make
 HAVING COUNT(*) > 100
-ORDER BY year, price_ratio DESC
+ORDER BY year DESC, price_ratio DESC
 """
 spark.sql(query8).show()
 
