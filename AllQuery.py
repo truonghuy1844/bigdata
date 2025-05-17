@@ -97,6 +97,8 @@ spark.sql(query6).show()
 
 # Câu 7: Ảnh hưởng của tình trạng xe đến giá sau khi điều chỉnh số km
 print("\n=== CÂU 7 ===")
+print("\n=== CÂU 7 ===")
+print("\n=== CÂU 7 ===")
 query7 = """
 SELECT condition_group, 
        ROUND(AVG(adjusted_price), 2) AS avg_adj_price
