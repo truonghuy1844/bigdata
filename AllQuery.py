@@ -32,13 +32,14 @@ spark.sql(query1).show()
 print("\n=== CÂU 2 ===")
 query2 = """
 SELECT body, 
-       ROUND(condition, 0) AS condition_group,
+       IFNULL(condition, 0) AS condition_group,
        ROUND(AVG(sellingprice), 2) AS avg_price
 FROM car_prices
 WHERE sellingprice IS NOT NULL
-GROUP BY body, ROUND(condition, 0)
+GROUP BY body, condition_group
 ORDER BY body, condition_group
 """
+
 spark.sql(query2).show()
 
 # Câu 3: Top 5 bang có số lượng xe bán ra nhiều nhất
