@@ -93,7 +93,8 @@ FROM car_prices
 WHERE mmr IS NOT NULL 
       AND sellingprice IS NOT NULL 
       AND body IS NOT NULL
-      AND sellingprice <= 1.25*mmr
+      AND 1.25*mmr <= sellingprice 
+      AND sellingprice <= 1.75*mmr
 GROUP BY seller, body
 HAVING COUNT(*) > 50
 ORDER BY avg_margin DESC
@@ -115,8 +116,6 @@ LIMIT 20
 spark.sql(query6).show()
 
 # Câu 7: Ảnh hưởng của tình trạng xe đến giá sau khi điều chỉnh số km
-print("\n=== CÂU 7 ===")
-print("\n=== CÂU 7 ===")
 print("\n=== CÂU 7 ===")
 query7 = """
 SELECT condition_group, 
