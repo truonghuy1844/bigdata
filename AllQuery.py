@@ -133,21 +133,24 @@ query6 = """
 """
 spark.sql(query6).show()
 
-# Câu 7: Ảnh hưởng của tình trạng xe đến giá sau khi điều chỉnh số km
-print("\n=== CÂU 7 ===")
+# Câu 7:
+print("\n=== CÂU 8 ===")
 query7 = """
-       SELECT condition_group, 
-       ROUND(AVG(adjusted_price), 2) AS avg_adj_price
-       FROM (
-              SELECT ROUND(condition) AS condition_group,
-                     sellingprice / (odometer + 1) AS adjusted_price
-              FROM car_prices
-              WHERE sellingprice IS NOT NULL AND odometer IS NOT NULL
+      WITH avg_table AS ( SELECT 
+              model,
+              year,
+              COUNT(*) AS total_sales,
+              ROUND(AVG(sellingprice), 2) AS avg_selling_price
+
+       FROM car_prices
+       WHERE sellingprice IS NOT NULL AND year IS NOT NULL AND model = 'Sorento' AND sale_year = '2015'
+       GROUP BY  model, year
+       HAVING COUNT(*) > 10
+       ORDER BY  year DESC
        )
-       GROUP BY condition_group
-       ORDER BY condition_group DESC
-       LIMIT 20
+       SELECT * FROM avg_table
 """
+
 spark.sql(query7).show()
 
 # Câu 8: Hãng xe giữ giá tốt nhất theo thời gian
@@ -215,6 +218,7 @@ SELECT
 FROM car_value_group
 GROUP BY seller, value_segment
 HAVING COUNT(*) > 50
+
 LIMIT 20
 """
 spark.sql(query10).show()
