@@ -164,5 +164,4 @@ ORDER BY  body, rn ASC
 LIMIT 20
 """
 spark.sql(query9).show()
-# Giữ ứng dụng mở nếu chạy bằng spark-submit
-input("\nNhấn Enter để kết thúc...")
+
