@@ -35,7 +35,7 @@ SELECT body,
        ROUND(condition, 0) AS condition_group,
        ROUND(AVG(sellingprice), 2) AS avg_price
 FROM car_prices
-WHERE sellingprice IS NOT NULL
+WHERE sellingprice IS NOT NULL AND condition IS NOT NULL AND body IS NOT NULL AND body != ''
 GROUP BY body, ROUND(condition, 0)
 ORDER BY body, condition_group
 """
