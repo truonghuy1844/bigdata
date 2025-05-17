@@ -116,7 +116,7 @@ spark.sql(query6).show()
 
 # Câu 7: Ảnh hưởng của tình trạng xe đến giá sau khi điều chỉnh số km
 print("\n=== CÂU 7 ===")
-query = """
+query7= """
 SELECT 
     make,
     model,
@@ -145,7 +145,6 @@ HAVING COUNT(*) > 100
 ORDER BY year, price_ratio DESC
 """
 spark.sql(query8).show()
-
 
 ### Câu 9: 
 print("\n=== CÂU 8 ===")
