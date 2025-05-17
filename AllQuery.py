@@ -184,3 +184,31 @@ LIMIT 20
 """
 spark.sql(query9).show()
 
+### Câu 10:
+print("\n=== CÂU 10 ===")
+query10= """
+WITH car_value_group AS (
+  SELECT *,
+         CASE
+           WHEN mmr < 5000 THEN 'Low'
+           WHEN mmr BETWEEN 5000 AND 15000 THEN 'Mid'
+           ELSE 'High'
+         END AS value_segment
+  FROM car_prices
+  WHERE mmr IS NOT NULL AND sellingprice IS NOT NULL
+        AND mmr > 0 AND sellingprice > 0
+)
+SELECT 
+    seller,
+    value_segment,
+    COUNT(*) AS total_sales,
+    ROUND(AVG(sellingprice), 2) AS avg_selling_price,
+    ROUND(AVG(mmr), 2) AS avg_market_value,
+    ROUND(AVG(sellingprice) / AVG(mmr), 2) AS price_ratio
+FROM car_value_group
+GROUP BY seller, value_segment
+HAVING COUNT(*) > 50
+ORDER BY price_ratio ASC
+LIMIT 20
+"""
+spark.sql(query10).show()
