@@ -135,7 +135,7 @@ spark.sql(query7).show()
 print("\n=== CÂU 8 ===")
 query8 = """
 SELECT year, make,
-       ROUND(AVG(sellingprice / mmr), 2) AS price_ratio,
+       ROUND(AVG(sellingprice / mmr), 2) AS price_ratio, 
        COUNT(*) AS total_sales
 FROM car_prices
 WHERE mmr IS NOT NULL AND sellingprice IS NOT NULL
@@ -147,7 +147,7 @@ spark.sql(query8).show()
 
 
 ### Câu 9: 
-print("\n=== CÂU 8 ===")
+print("\n=== CÂU 9 ===")
 query9 = """
 SELECT year, make,
        ROUND(AVG(sellingprice / mmr), 2) AS price_ratio,
