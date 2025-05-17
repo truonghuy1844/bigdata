@@ -75,7 +75,7 @@ SELECT make as brand, model, year, mmr as market_price, sellingprice as actual_p
        (mmr - sellingprice) AS diff_price
 FROM car_prices
 WHERE mmr IS NOT NULL AND sellingprice IS NOT NULL
-  AND (mmr - sellingprice) > 5000
+  AND diff_price > 5000
 ORDER BY diff_price DESC
 LIMIT 10
 """
@@ -112,8 +112,7 @@ spark.sql(query6).show()
 
 # Câu 7: Ảnh hưởng của tình trạng xe đến giá sau khi điều chỉnh số km
 print("\n=== CÂU 7 ===")
-print("\n=== CÂU 7 ===")
-print("\n=== CÂU 7 ===")
+
 query7 = """
 SELECT condition_group, 
        ROUND(AVG(adjusted_price), 2) AS avg_adj_price
@@ -143,17 +142,22 @@ ORDER BY year, price_ratio DESC
 spark.sql(query8).show()
 
 
-### Câu 9: 
-print("\n=== CÂU 8 ===")
+### Câu 9: Hãng được giao dịch nhiều nhất trong mỗi năm cho mỗi loại body (SUV hoặc Sedan) và loại hộp số
+print("\n=== CÂU 9 ===")
 query9 = """
-SELECT year, make,
-       ROUND(AVG(sellingprice / mmr), 2) AS price_ratio,
-       COUNT(*) AS total_sales
-FROM car_prices
-WHERE mmr IS NOT NULL AND sellingprice IS NOT NULL
-GROUP BY year, make
-HAVING COUNT(*) > 100
-ORDER BY year, price_ratio DESC
+WITH top_sale AS(
+       SELECT IFNULL(body,'NO_TYPE') as body, IFNULL(transmission, 'NO_TYPE') as transmission,
+        IFNULL(make,'NO_NAME') as brand,
+       COUNT(*) AS total_sales,
+       ROW_NUMBER() OVER (PARTITION BY body ORDER BY COUNT(*) DESC) AS rn
+       FROM car_prices WHERE body like 'SUV%' OR body like 'Sedan%'
+       GROUP BY body, transmission, brand
+       
+)
+
+SELECT body, transmission, brand, total_sales  FROM top_sale WHERE rn <= 5
+ORDER BY  body, rn ASC
+LIMIT 20
 """
 spark.sql(query9).show()
 # Giữ ứng dụng mở nếu chạy bằng spark-submit
