@@ -30,6 +30,7 @@ spark.sql(query1).show()
 
 # Câu 2: So sánh giá bán trung bình theo loại thân xe và tình trạng xe
 print("\n=== CÂU 2 ===")
+print("\n=== CÂU 2 ===")
 query2 = """
 SELECT IFNULL(body,'[No_Name]') as body, 
        IFNULL(condition, 0) AS condition_group,
