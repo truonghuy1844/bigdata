@@ -68,16 +68,17 @@ LIMIT 20
 """
 spark.sql(query3).show()
 
+
 # Câu 4: Xác định xe bị bán dưới giá trị thị trường trên 5000 USD
 print("\n=== CÂU 4 ===")
 query4 = """
-SELECT make as brand, model, year, mmr as market_price, sellingprice as actual_price,
+       SELECT make as brand, model, year, mmr as market_price, sellingprice as actual_price,
        (mmr - sellingprice) AS diff_price
-FROM car_prices
-WHERE mmr IS NOT NULL AND sellingprice IS NOT NULL
-  AND diff_price > 5000
-ORDER BY diff_price DESC
-LIMIT 10
+       FROM car_prices
+       WHERE mmr IS NOT NULL AND sellingprice IS NOT NULL
+        AND (mmr - sellingprice) > 5000
+       ORDER BY diff_price DESC
+       LIMIT 10
 """
 spark.sql(query4).show()
 
@@ -105,29 +106,30 @@ spark.sql(query5).show()
 # Câu 6: Nhóm xe có dấu hiệu bị định giá sai lệch theo phân vị (outlier detection)
 print("\n=== CÂU 6 ===")
 query6 = """
-SELECT make, model, year, mmr, sellingprice,
-       (sellingprice - mmr) AS deviation
-FROM car_prices
-WHERE mmr IS NOT NULL AND sellingprice IS NOT NULL
-  AND (sellingprice < 0.25 * mmr OR sellingprice > 1.75 * mmr)
-ORDER BY ABS(sellingprice - mmr) DESC
-LIMIT 20
+       SELECT make, model, year, mmr, sellingprice,
+               (sellingprice - mmr) AS deviation
+       FROM car_prices
+       WHERE mmr IS NOT NULL AND sellingprice IS NOT NULL
+              AND (sellingprice < 0.25 * mmr OR sellingprice > 1.75 * mmr)
+       ORDER BY ABS(sellingprice - mmr) DESC
+       LIMIT 20
 """
 spark.sql(query6).show()
 
 # Câu 7: Ảnh hưởng của tình trạng xe đến giá sau khi điều chỉnh số km
 print("\n=== CÂU 7 ===")
 query7 = """
-SELECT condition_group, 
+       SELECT condition_group, 
        ROUND(AVG(adjusted_price), 2) AS avg_adj_price
-FROM (
-    SELECT ROUND(condition) AS condition_group,
-           sellingprice / (odometer + 1) AS adjusted_price
-    FROM car_prices
-    WHERE sellingprice IS NOT NULL AND odometer IS NOT NULL
-)
+       FROM (
+              SELECT ROUND(condition) AS condition_group,
+                     sellingprice / (odometer + 1) AS adjusted_price
+              FROM car_prices
+              WHERE sellingprice IS NOT NULL AND odometer IS NOT NULL
+       )
 GROUP BY condition_group
 ORDER BY condition_group DESC
+LIMIT 20
 """
 spark.sql(query7).show()
 
@@ -141,7 +143,7 @@ FROM car_prices
 WHERE mmr IS NOT NULL AND sellingprice IS NOT NULL
 GROUP BY year, make
 HAVING COUNT(*) > 100
-ORDER BY year, price_ratio DESC
+ORDER BY year DESC, price_ratio DESC
 """
 spark.sql(query8).show()
 
