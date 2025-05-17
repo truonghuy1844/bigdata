@@ -204,11 +204,17 @@ SELECT
     COUNT(*) AS total_sales,
     ROUND(AVG(sellingprice), 2) AS avg_selling_price,
     ROUND(AVG(mmr), 2) AS avg_market_value,
-    ROUND(AVG(sellingprice) / AVG(mmr), 2) AS price_ratio
+    ROUND(AVG(sellingprice) / AVG(mmr), 2) AS price_ratio,
+    CASE
+        WHEN ROUND(AVG(sellingprice) / AVG(mmr), 2) < 0.75 THEN 'Rất rẻ'
+        WHEN ROUND(AVG(sellingprice) / AVG(mmr), 2) >= 0.75 AND ROUND(AVG(sellingprice) / AVG(mmr), 2) < 1.0 THEN 'Rẻ'
+        WHEN ROUND(AVG(sellingprice) / AVG(mmr), 2) >= 1.0 AND ROUND(AVG(sellingprice) / AVG(mmr), 2) <= 1.25 THEN 'Đắt'
+        WHEN ROUND(AVG(sellingprice) / AVG(mmr), 2) > 1.25 THEN 'Rất đắt'
+        ELSE 'Không xác định' 
+    END AS seller_review
 FROM car_value_group
 GROUP BY seller, value_segment
 HAVING COUNT(*) > 50
-ORDER BY price_ratio ASC
 LIMIT 20
 """
 spark.sql(query10).show()
