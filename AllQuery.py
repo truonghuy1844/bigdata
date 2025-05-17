@@ -1,19 +1,36 @@
 from pyspark.sql import SparkSession
+from pyspark.sql.functions import to_timestamp, regexp_replace, year
 
-# Tạo Spark session
-spark = SparkSession.builder \
-    .appName("Read Car Prices CSV") \
-    .getOrCreate()
+# Khởi tạo SparkSession (nếu chưa có)
+spark = SparkSession.builder.appName("Car Prices").config("spark.sql.legacy.timeParserPolicy", "LEGACY").getOrCreate()
 
-# Đọc dữ liệu
+# Đọc file CSV
 df = spark.read.option("header", True).option("inferSchema", True).csv("car_prices.csv")
 
-# Tạo Temp View
-df.createOrReplaceTempView("car_prices")
+# Làm sạch saledate: bỏ phần "GMT-0800 (PST)"
+df_cleaned = df.withColumn(
+    "saledate_clean",
+    regexp_replace("saledate", "GMT.*", "")
+)
 
-# Hiển thị schema
+# Chuyển thành kiểu timestamp
+df_parsed = df_cleaned.withColumn(
+    "saledate_ts",
+    to_timestamp("saledate_clean", "EEE MMM dd yyyy HH:mm:ss")
+)
+
+# Trích xuất năm
+df_final = df_parsed.withColumn(
+    "sale_year",
+    year("saledate_ts")
+)
+
+# Tạo lại Temp View để dùng SQL
+df_final.createOrReplaceTempView("car_prices")
+
+# In schema để kiểm tra
 print("=== SCHEMA ===")
-df.printSchema()
+df_final.printSchema()
 
 # Câu 1: 5 Hãng xe có mức bán trung bình cao nhất trong mỗi năm
 print("\n=== CÂU 1 === TOP 5 hãng xe có mức bán giá thực tế trung bình cao nhất trong mỗi năm")
@@ -106,7 +123,7 @@ spark.sql(query5).show()
 # Câu 6: Nhóm xe có dấu hiệu bị định giá sai lệch theo phân vị (outlier detection)
 print("\n=== CÂU 6 ===")
 query6 = """
-       SELECT make, model, year, mmr, sellingprice,
+       SELECT make as brand, model, year, mmr, sellingprice,
                (sellingprice - mmr) AS deviation
        FROM car_prices
        WHERE mmr IS NOT NULL AND sellingprice IS NOT NULL
@@ -127,9 +144,9 @@ query7 = """
               FROM car_prices
               WHERE sellingprice IS NOT NULL AND odometer IS NOT NULL
        )
-GROUP BY condition_group
-ORDER BY condition_group DESC
-LIMIT 20
+       GROUP BY condition_group
+       ORDER BY condition_group DESC
+       LIMIT 20
 """
 spark.sql(query7).show()
 
