@@ -164,7 +164,6 @@ ORDER BY year DESC, price_ratio DESC
 """
 spark.sql(query8).show()
 
-
 ### Câu 9: Hãng được giao dịch nhiều nhất trong mỗi năm cho mỗi loại body (SUV hoặc Sedan) và loại hộp số
 print("\n=== CÂU 9 ===")
 query9 = """
