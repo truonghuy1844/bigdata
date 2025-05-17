@@ -93,6 +93,7 @@ FROM car_prices
 WHERE mmr IS NOT NULL 
       AND sellingprice IS NOT NULL 
       AND body IS NOT NULL
+      AND sellingprice <= 1.25*mmr
 GROUP BY seller, body
 HAVING COUNT(*) > 50
 ORDER BY avg_margin DESC
