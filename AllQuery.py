@@ -81,19 +81,23 @@ LIMIT 10
 """
 spark.sql(query4).show()
 
-# Câu 5: Phân tích nhà bán xe định giá thấp hơn thị trường nhiều nhất
+# Câu 5: Phân tích hiệu quả bán xe của từng đại lý theo loại xe
 print("\n=== CÂU 5 ===")
 query5 = """
 SELECT seller,
+       body,
        COUNT(*) AS total_sales,
-       ROUND(AVG(mmr - sellingprice), 2) AS avg_diff_price,
-       ROUND(SUM(mmr - sellingprice), 2) AS diff_price,
+       ROUND(AVG(sellingprice - mmr), 2) AS avg_margin,
+       ROUND(SUM(sellingprice - mmr), 2) AS total_margin
 FROM car_prices
-WHERE mmr IS NOT NULL AND sellingprice IS NOT NULL
-GROUP BY seller, 
-HAVING COUNT(*) > 100
-ORDER BY avg_discount DESC
-LIMIT 10
+WHERE mmr IS NOT NULL 
+      AND sellingprice IS NOT NULL 
+      AND body IS NOT NULL
+      AND sellingprice <= 1.25*mmr
+GROUP BY seller, body
+HAVING COUNT(*) > 50
+ORDER BY avg_margin DESC
+LIMIT 15
 """
 spark.sql(query5).show()
 
@@ -131,7 +135,7 @@ spark.sql(query7).show()
 print("\n=== CÂU 8 ===")
 query8 = """
 SELECT year, make,
-       ROUND(AVG(sellingprice / mmr), 2) AS price_ratio,
+       ROUND(AVG(sellingprice / mmr), 2) AS price_ratio, 
        COUNT(*) AS total_sales
 FROM car_prices
 WHERE mmr IS NOT NULL AND sellingprice IS NOT NULL
