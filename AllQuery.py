@@ -130,7 +130,7 @@ LIMIT 20
 """
 spark.sql(query6).show()
 
-# Câu 7: Ảnh hưởng của tình trạng xe đến giá sau khi điều chỉnh số km
+# Câu 7: Chênh lệch giá bán của mẫu xe Sorento vào năm 2015 so với đời sản xuất trước đó (năm sản xuất)
 print("\n=== CÂU 7 ===")
 query7 =( """
 WITH sorento_yearly_sales AS (
@@ -150,11 +150,12 @@ WITH sorento_yearly_sales AS (
 SELECT 
     year,
     avg_selling_price,
-    LAG(avg_selling_price) OVER (PARTITION BY model ORDER BY year DESC) AS prev_year_price,
+    LAG(year) OVER (PARTITION BY model ORDER BY year DESC) as compare_year,
+    LAG(avg_selling_price) OVER (PARTITION BY model ORDER BY year DESC) AS compare_year_price,
     ROUND(
         (avg_selling_price - LAG(avg_selling_price) OVER (PARTITION BY model ORDER BY year DESC)) 
         / LAG(avg_selling_price) OVER (PARTITION BY model ORDER BY year DESC) * 100, 2
-    ) AS percent_drop
+    ) AS percent_change
 FROM sorento_yearly_sales
 ORDER BY year DESC
 
@@ -176,17 +177,22 @@ ORDER BY year DESC, price_ratio DESC
 """
 spark.sql(query8).show()
 
-### Câu 9: 
+### Câu 9: Hãng được giao dịch nhiều nhất trong mỗi năm cho mỗi loại body (SUV hoặc Sedan) và loại hộp số
 print("\n=== CÂU 9 ===")
 query9 = """
-SELECT year, make,
-       ROUND(AVG(sellingprice / mmr), 2) AS price_ratio,
-       COUNT(*) AS total_sales
-FROM car_prices
-WHERE mmr IS NOT NULL AND sellingprice IS NOT NULL
-GROUP BY year, make
-HAVING COUNT(*) > 100
-ORDER BY year DESC, price_ratio DESC
+WITH top_sale AS(
+       SELECT year, IFNULL(body,'NO_TYPE') as body, IFNULL(transmission, 'NO_TYPE') as transmission,
+        IFNULL(make,'NO_NAME') as brand,
+       COUNT(*) AS total_sales,
+       ROW_NUMBER() OVER (PARTITION BY year, body ORDER BY COUNT(*) DESC) AS rn
+       FROM car_prices WHERE (body like 'SUV%' OR body like 'Sedan%' OR body like 'Van%') AND transmission = 'automatic' AND year > 2010
+       GROUP BY year, body, transmission, brand
+       
+)
+
+SELECT year, body, transmission, brand, total_sales  FROM top_sale WHERE rn <= 3
+ORDER BY  year DESC, body, rn ASC
+LIMIT 20
 """
 spark.sql(query9).show()
 
@@ -212,10 +218,11 @@ SELECT
     ROUND(AVG(mmr), 2) AS avg_market_value,
     ROUND(AVG(sellingprice) / AVG(mmr), 2) AS price_ratio,
     CASE
-        WHEN ROUND(AVG(sellingprice) / AVG(mmr), 2) < 0.75 THEN 'Rất rẻ'
-        WHEN ROUND(AVG(sellingprice) / AVG(mmr), 2) >= 0.75 AND ROUND(AVG(sellingprice) / AVG(mmr), 2) < 1.0 THEN 'Rẻ'
-        WHEN ROUND(AVG(sellingprice) / AVG(mmr), 2) >= 1.0 AND ROUND(AVG(sellingprice) / AVG(mmr), 2) <= 1.25 THEN 'Đắt'
-        WHEN ROUND(AVG(sellingprice) / AVG(mmr), 2) > 1.25 THEN 'Rất đắt'
+        WHEN ROUND(AVG(sellingprice) / AVG(mmr), 2) < 0.75 THEN 'Very cheap'
+        WHEN ROUND(AVG(sellingprice) / AVG(mmr), 2) >= 0.75 AND ROUND(AVG(sellingprice) / AVG(mmr), 2) < 0.95 THEN 'Cheap'
+        WHEN ROUND(AVG(sellingprice) / AVG(mmr), 2) >= 0.95 AND ROUND(AVG(sellingprice) / AVG(mmr), 2) < 1.05 THEN 'Normal'
+        WHEN ROUND(AVG(sellingprice) / AVG(mmr), 2) >= 1.05 AND ROUND(AVG(sellingprice) / AVG(mmr), 2) <= 1.25 THEN 'Expensive'
+        WHEN ROUND(AVG(sellingprice) / AVG(mmr), 2) > 1.25 THEN 'Very expensive'
         ELSE 'Không xác định' 
     END AS seller_review
 FROM car_value_group
