@@ -99,13 +99,14 @@ spark.sql(query4).show()
 
 # Câu 5: Phân tích hiệu quả bán xe của từng đại lý theo loại xe
 print("\n=== CÂU 5 ===")
-percentiles = spark.sql("""
+percentiles_result = spark.sql("""
 SELECT 
   PERCENTILE(sellingprice / mmr, array(0.25, 0.75)) AS ratios
 FROM car_prices
 WHERE sellingprice IS NOT NULL AND mmr IS NOT NULL
-""").collect()[0]['ratios']
+""").collect()
 
+ratios = percentiles_result[0]["ratios"]
 q1_ratio, q3_ratio = ratios[0], ratios[1]
 
 query5 = f"""
