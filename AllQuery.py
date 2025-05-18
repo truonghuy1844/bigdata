@@ -109,8 +109,8 @@ FROM car_prices
 WHERE mmr IS NOT NULL 
       AND sellingprice IS NOT NULL 
       AND body IS NOT NULL
-      AND sellingprice >= 0.25 * mmr
-      AND sellingprice <= 1.75 * mmr
+      AND sellingprice >= 0.5 * mmr
+      AND sellingprice <= 1.5 * mmr
 GROUP BY seller, body
 HAVING COUNT(*) > 50
 ORDER BY avg_margin DESC
@@ -125,7 +125,7 @@ SELECT make, model, year, mmr, sellingprice,
        (sellingprice - mmr) AS deviation
 FROM car_prices
 WHERE mmr IS NOT NULL AND sellingprice IS NOT NULL
-  AND (sellingprice < 0.25 * mmr OR sellingprice > 1.75 * mmr)
+  AND (sellingprice < 0.5 * mmr OR sellingprice > 1.5 * mmr)
 ORDER BY ABS(sellingprice - mmr) DESC
 LIMIT 20
 """
