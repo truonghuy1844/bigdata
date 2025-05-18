@@ -109,7 +109,7 @@ FROM car_prices
 WHERE mmr IS NOT NULL 
       AND sellingprice IS NOT NULL 
       AND body IS NOT NULL
-      AND sellingprice >= 1.25 * mmr
+      AND sellingprice >= 0.25 * mmr
       AND sellingprice <= 1.75 * mmr
 GROUP BY seller, body
 HAVING COUNT(*) > 50
