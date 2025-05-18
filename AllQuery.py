@@ -124,18 +124,20 @@ WHERE mmr IS NOT NULL
 GROUP BY seller, body
 HAVING COUNT(*) > 50
 ORDER BY profit_avg DESC
-LIMIT 15
+LIMIT 20
 """
 spark.sql(query5).show()
 
+
 # Câu 6: Nhóm xe có dấu hiệu bị định giá sai lệch theo phân vị (outlier detection)
 print("\n=== CÂU 6 ===")
-query6 = """
+query6 = f"""
 SELECT make, model, year, mmr, sellingprice,
        (sellingprice - mmr) AS deviation
 FROM car_prices
 WHERE mmr IS NOT NULL AND sellingprice IS NOT NULL
-  AND (sellingprice < 0.5 * mmr OR sellingprice > 1.5 * mmr)
+    AND ( sellingprice / mmr < {q1_ratio}
+    OR sellingprice / mmr > {q3_ratio})
 ORDER BY ABS(sellingprice - mmr) DESC
 LIMIT 20
 """
@@ -156,6 +158,7 @@ WITH sorento_yearly_sales AS (
       AND sale_year = 2015
       AND model = 'Sorento'
     GROUP BY model, year
+    HAVING COUNT(*) > 50
 )
 
 SELECT 
