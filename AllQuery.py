@@ -102,15 +102,16 @@ print("\n=== CÂU 5 ===")
 query5 = """
 SELECT seller,
        body,
-       COUNT(*) AS total_sales,
+       COUNT(*) AS total_sales, 
+       PERCENTILE_CONT(0.50) WITHIN GROUP (ORDER BY mmr) AS Q2,
        ROUND(AVG(sellingprice - mmr), 2) AS profit_avg,
        ROUND(SUM(sellingprice - mmr), 2) AS total_profit
 FROM car_prices
 WHERE mmr IS NOT NULL 
       AND sellingprice IS NOT NULL 
       AND body IS NOT NULL
-      AND sellingprice >= 0.5 * mmr
-      AND sellingprice <= 1.5 * mmr
+      AND sellingprice >= Q2 * mmr
+      AND sellingprice <= (1+Q2) * mmr
 GROUP BY seller, body
 HAVING COUNT(*) > 50
 ORDER BY profit_avg DESC
