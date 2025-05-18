@@ -113,7 +113,7 @@ WHERE mmr IS NOT NULL
       AND sellingprice <= 1.5 * mmr
 GROUP BY seller, body
 HAVING COUNT(*) > 50
-ORDER BY avg_margin DESC
+ORDER BY profit_avg DESC
 LIMIT 15
 """
 spark.sql(query5).show()
