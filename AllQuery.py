@@ -166,14 +166,42 @@ spark.sql(query7).show()
 # Câu 8: Hãng xe giữ giá tốt nhất theo thời gian
 print("\n=== CÂU 8 ===")
 query8 = """
-SELECT year, make,
-       ROUND(AVG(sellingprice / mmr), 2) AS price_ratio,
-       COUNT(*) AS total_sales
+WITH avg AS (
+SELECT year, sale_year, model,
+       ROUND(AVG(mmr), 2) AS avg_price,
+       COUNT(*) AS total_sales,
+       ROW_NUMBER() OVER (PARTITION BY year, model ORDER BY sale_year DESC ) AS rn
 FROM car_prices
-WHERE mmr IS NOT NULL AND sellingprice IS NOT NULL
-GROUP BY year, make
-HAVING COUNT(*) > 100
-ORDER BY year DESC, price_ratio DESC
+WHERE (mmr IS NOT NULL) AND (sellingprice IS NOT NULL) AND (model IS NOT NULL)
+             AND (year IS NOT NULL) AND (sale_year IS NOT NULL)
+GROUP BY year, sale_year, model
+ORDER BY year DESC, sale_year DESC, avg_price DESC
+),
+
+change_rate as (
+    SELECT
+    year, sale_year, model,
+    avg_price,
+    LAG(sale_year) OVER (PARTITION BY year, model ORDER BY rn) AS compare_year,
+        LAG(avg_price) OVER (PARTITION BY year, model ORDER BY rn) AS compare_year_price,
+        ROUND(
+            (avg_price - LAG(avg_price) OVER (PARTITION BY year, model ORDER BY rn))
+            / NULLIF(LAG(avg_price) OVER (PARTITION BY year, model ORDER BY rn), 0) * 100, 
+            2
+        ) AS percent_change
+FROM avg
+ORDER BY year
+)
+
+    SELECT 
+        year, model,
+        ROUND(AVG(percent_change),2) AS ratio
+    FROM change_rate
+    WHERE percent_change IS NOT NULL
+    GROUP BY year, model
+    ORDER BY ratio DESC
+
+
 """
 spark.sql(query8).show()
 
