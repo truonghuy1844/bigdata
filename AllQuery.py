@@ -103,13 +103,14 @@ query5 = """
 SELECT seller,
        body,
        COUNT(*) AS total_sales,
-       ROUND(AVG(sellingprice - mmr), 2) AS avg_margin,
-       ROUND(SUM(sellingprice - mmr), 2) AS total_margin
+       ROUND(AVG(sellingprice - mmr), 2) AS profit_avg,
+       ROUND(SUM(sellingprice - mmr), 2) AS total_profit
 FROM car_prices
 WHERE mmr IS NOT NULL 
       AND sellingprice IS NOT NULL 
       AND body IS NOT NULL
-      AND sellingprice <= 1.25 * mmr
+      AND sellingprice >= 1.25 * mmr
+      AND sellingprice <= 1.75 * mmr
 GROUP BY seller, body
 HAVING COUNT(*) > 50
 ORDER BY avg_margin DESC
