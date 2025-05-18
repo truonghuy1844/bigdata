@@ -99,18 +99,27 @@ spark.sql(query4).show()
 
 # Câu 5: Phân tích hiệu quả bán xe của từng đại lý theo loại xe
 print("\n=== CÂU 5 ===")
-query5 = """
+percentiles = spark.sql("""
+SELECT 
+  PERCENTILE(sellingprice / mmr, array(0.25, 0.75)) AS ratios
+FROM car_prices
+WHERE sellingprice IS NOT NULL AND mmr IS NOT NULL
+""").collect()[0]['ratios']
+
+q1_ratio, q3_ratio = ratios[0], ratios[1]
+
+query5 = f"""
 SELECT seller,
        body,
-       COUNT(*) AS total_sales, 
+       COUNT(*) AS total_sales,
        ROUND(AVG(sellingprice - mmr), 2) AS profit_avg,
        ROUND(SUM(sellingprice - mmr), 2) AS total_profit
 FROM car_prices
 WHERE mmr IS NOT NULL 
       AND sellingprice IS NOT NULL 
       AND body IS NOT NULL
-      AND sellingprice >= 0.5 * mmr
-      AND sellingprice <= 1.5 * mmr
+      AND sellingprice / mmr >= {q1_ratio}
+      AND sellingprice / mmr <= {q3_ratio}
 GROUP BY seller, body
 HAVING COUNT(*) > 50
 ORDER BY profit_avg DESC
