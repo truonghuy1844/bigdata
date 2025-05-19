@@ -189,12 +189,13 @@ FROM car_prices
 WHERE (mmr IS NOT NULL) AND (sellingprice IS NOT NULL) AND (model IS NOT NULL)
              AND (year IS NOT NULL) AND (sale_year IS NOT NULL)
 GROUP BY year, sale_year, model
+HAVING total_sales > 50
 ORDER BY year DESC, sale_year DESC, avg_price DESC
 ),
 
 change_rate as (
     SELECT
-    year, sale_year, model,
+    year, sale_year, model, total_sales,
     avg_price,
     LAG(sale_year) OVER (PARTITION BY year, model ORDER BY rn) AS compare_year,
         LAG(avg_price) OVER (PARTITION BY year, model ORDER BY rn) AS compare_year_price,
@@ -208,7 +209,7 @@ ORDER BY year
 )
 
     SELECT 
-        year, model,
+        year, model, SUM(total_sales) as total_sale,
         ROUND(AVG(percent_change),2) AS ratio
     FROM change_rate
     WHERE percent_change IS NOT NULL
