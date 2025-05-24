@@ -15,7 +15,7 @@ df.createOrReplaceTempView("car_prices")
 print("=== SCHEMA ===")
 df.printSchema()
 
-# Câu 1: 5 Hãng xe có mức bán trung bình cao nhất trong mỗi năm
+# Câu 1: 5 Hãng xe có mức bán trung bình (sellingprices) cao nhất trong mỗi năm
 print("\n=== CÂU 1 === TOP 5 hãng xe có mức bán giá thực tế trung bình cao nhất trong mỗi năm")
 query1 = """
 WITH ranked_makes AS (
