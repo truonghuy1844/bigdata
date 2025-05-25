@@ -56,11 +56,11 @@ spark.sql(query1).show()
 # Câu 2: So sánh giá bán trung bình theo loại thân xe và tình trạng xe
 print("\n=== CÂU 2 ===")
 query2 = """
-SELECT IFNULL(body,'[No_Name]') as body, 
-       IFNULL(condition, 0) AS condition_group,
+SELECT body as body, 
+       condition AS condition_group,
        ROUND(AVG(sellingprice), 2) AS avg_price
 FROM car_prices
-WHERE sellingprice IS NOT NULL
+WHERE sellingprice IS NOT NULL AND condition is not null AND body is not null
 GROUP BY body, condition_group
 ORDER BY  condition_group, avg_price DESC
 LIMIT 10
@@ -75,6 +75,7 @@ WITH top_sale AS(
        SELECT year, state, COUNT(*) AS total_sales,
       ROW_NUMBER() OVER (PARTITION BY year ORDER BY COUNT(*) DESC) AS rn
        FROM car_prices
+       where state is not null and year is not null
        GROUP BY year, state
 )
 
