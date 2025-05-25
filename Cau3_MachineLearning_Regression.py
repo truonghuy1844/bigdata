@@ -1,3 +1,6 @@
+import os
+os.environ["PYSPARK_PYTHON"] = r"C:/Users/LENOVO/AppData/Local/Programs/Python/Python39/python.exe"
+os.environ["PYSPARK_DRIVER_PYTHON"] = r"C:/Users/LENOVO/AppData/Local/Programs/Python/Python39/python.exe"
 # Import thư viện cần thiết
 from pyspark.sql import SparkSession
 from pyspark.sql.functions import col, lit
@@ -13,26 +16,18 @@ def main():
     
     # 2. Đọc dữ liệu từ file CSV
     df = spark.read.csv("car_prices.csv", header=True, inferSchema=True)
-    print("== Dữ liệu đầu vào ==")
-    df.show(5)
 
     # 3. Tiền xử lý dữ liệu: loại bỏ các dòng có giá trị NULL ở những cột quan trọng
     df = df.dropna(subset=["sellingprice", "year", "odometer", "condition", "make"])
-    print("== Dữ liệu sau khi drop NULL ==")
-    df.show(5)
-
+  
     # 4. Tạo biến mới: 'car_age' = 2025 - year (giả định năm hiện tại là 2025)
     # Mục đích: tuổi xe ảnh hưởng rất lớn đến giá bán, xe càng cũ thì giá thường giảm
     df = df.withColumn("car_age", lit(2025) - col("year"))
-    print("== Dữ liệu có thêm cột tuổi xe ==")
-    df.select("year", "car_age").show(5)
-
+   
     # 5. Chuyển biến hãng xe ('make') từ chữ sang số để mô hình có thể hiểu
     # StringIndexer tự động tạo ra cột 'makeIndex' chứa giá trị số ứng với từng hãng
     makeIndexer = StringIndexer(inputCol="make", outputCol="makeIndex").fit(df)
     df = makeIndexer.transform(df)
-    print("== Dữ liệu có thêm cột makeIndex ==")
-    df.select("make", "makeIndex").show(5)
 
     # 6. Chuẩn bị tập đặc trưng (features) cho mô hình
     # VectorAssembler gom các cột 'car_age', 'odometer', 'condition', 'makeIndex' thành một cột vector 'features'
@@ -41,8 +36,7 @@ def main():
         outputCol="features"
     )
     df = assembler.transform(df)
-    print("== Dữ liệu có cột features ==")
-    df.select("car_age", "odometer", "condition", "makeIndex", "features").show(5, truncate=False)
+    
 
     # 7. Chia dữ liệu thành tập huấn luyện (70%) và tập kiểm tra (30%)
     train_df, test_df = df.randomSplit([0.7, 0.3], seed=42)
