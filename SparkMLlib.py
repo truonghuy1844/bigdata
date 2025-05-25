@@ -1,4 +1,4 @@
-from pyspark.ml.classification import RandomForestClassifier
+from pyspark.ml.regression import RandomForestRegressor
 from pyspark.ml.feature import VectorAssembler, StringIndexer
 from pyspark.ml.tuning import CrossValidator, ParamGridBuilder
 from pyspark.ml.evaluation import RegressionEvaluator
@@ -7,35 +7,44 @@ from pyspark.sql import SparkSession
 # Tạo Spark session
 spark = SparkSession.builder.appName("CarPricePrediction").getOrCreate()
 
-# Đọc dữ liệu vào Spark DataFrame
-df = spark.read.csv("/mnt/data/car_prices.csv", header=True, inferSchema=True)
+# Đọc dữ liệu
+df = spark.read.csv("car_prices.csv", header=True, inferSchema=True)
 
-# Tiền xử lý dữ liệu
-# Chuyển các cột categorical như 'make', 'model', 'color' thành các giá trị số (StringIndexer)
-indexer_make = StringIndexer(inputCol="make", outputCol="makeIndex")
-indexer_model = StringIndexer(inputCol="model", outputCol="modelIndex")
-indexer_color = StringIndexer(inputCol="color", outputCol="colorIndex")
+# Áp dụng StringIndexer cho categorical columns
+indexer_make = StringIndexer(inputCol="make", outputCol="makeIndex").fit(df)
+indexer_model = StringIndexer(inputCol="model", outputCol="modelIndex").fit(df)
+indexer_color = StringIndexer(inputCol="color", outputCol="colorIndex").fit(df)
 
-# Chuẩn bị các đặc trưng đầu vào (VectorAssembler)
-assembler = VectorAssembler(inputCols=["year", "odometer", "condition", "makeIndex", "modelIndex", "colorIndex"], outputCol="features")
+df = indexer_make.transform(df)
+df = indexer_model.transform(df)
+df = indexer_color.transform(df)
 
-# Xây dựng mô hình Random Forest
-rf = RandomForestClassifier(featuresCol="features", labelCol="sellingprice", numTrees=50)
+# Chuẩn bị vector features
+assembler = VectorAssembler(
+    inputCols=["year", "odometer", "condition", "makeIndex", "modelIndex", "colorIndex"],
+    outputCol="features"
+)
+df = assembler.transform(df)
 
-# Tuning tham số bằng GridSearch + CrossValidation
+# Khởi tạo mô hình hồi quy Random Forest
+rf = RandomForestRegressor(featuresCol="features", labelCol="sellingprice")
+
+# Tạo lưới tham số tuning
 paramGrid = ParamGridBuilder() \
     .addGrid(rf.maxDepth, [5, 10, 15]) \
     .addGrid(rf.numTrees, [50, 100]) \
     .build()
 
-# CrossValidator để tìm tham số tốt nhất
+# Khởi tạo evaluator hồi quy
 evaluator = RegressionEvaluator(labelCol="sellingprice", predictionCol="prediction", metricName="rmse")
+
+# Khởi tạo cross-validator
 cv = CrossValidator(estimator=rf, estimatorParamMaps=paramGrid, evaluator=evaluator, numFolds=5)
 
 # Huấn luyện mô hình
 cvModel = cv.fit(df)
 
-# Dự đoán với mô hình tốt nhất
+# Dự đoán
 predictions = cvModel.transform(df)
 
 # Hiển thị kết quả
