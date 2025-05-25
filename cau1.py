@@ -5,7 +5,9 @@ from pyspark.ml.feature import VectorAssembler, StandardScaler
 from pyspark.ml.clustering import KMeans
 from pyspark.ml.evaluation import ClusteringEvaluator
 from pyspark.ml import Pipeline
-
+import matplotlib.pyplot as plt
+import seaborn as sns
+import pandas as pd
 
 # Khởi tạo Spark Session
 spark = SparkSession.builder \
@@ -184,8 +186,7 @@ def prepare_features_for_clustering(df):
     clean_df = df.filter(col("total_vehicles") >= 2)  # Chỉ lấy bang có ít nhất 2 xe
     clean_df = clean_df.select(["state"] + feature_cols).na.drop()
     
-    print(f"Số bang sau khi lọc: {clean_df.count()}")
-    
+
     # Vector assembler tạo thành vector để tính Kmeans
     assembler = VectorAssembler(
         inputCols=feature_cols,
@@ -214,19 +215,15 @@ pipeline_model = pipeline.fit(geo_features)
 scaled_data = pipeline_model.transform(geo_features)
 
 # Tìm số cluster tối ưu bằng Elbow method
-def find_optimal_clusters(data, max_k=None):
+def find_optimal_clusters(clean_df, max_k=None):
     """Tìm số cluster tối ưu"""
     
     # Xác định max_k dựa trên số lượng bang
-    total_states = data.count()
-    if data is None or data.count() == 0:
-        raise ValueError("Dữ liệu đầu vào rỗng hoặc không hợp lệ.")
-    print("Tổng số dòng dữ liệu:", total_states)
-    print("Kiểu dữ liệu:", type(total_states))
+    total_states = clean_df.count()
     if max_k is None:
-        if total_states < 2:
-            raise ValueError("Giá trị total_states không hợp lệ, cần >= 2 để phân cụm.")
-        max_k = min(8, total_states - 1)  # Không quá 8 và không vượt quá số mẫu
+        # Sử dụng built-in min function của Python
+        import builtins
+        max_k = builtins.min(8, total_states - 1)
   # Không quá 8 và không vượt quá số bang
     
     print(f"Tìm kiếm K tối ưu từ 2 đến {max_k} cho {total_states} bang")
@@ -237,14 +234,14 @@ def find_optimal_clusters(data, max_k=None):
     for k in range(2, max_k + 1):
         try:
             kmeans = KMeans(k=k, seed=42, maxIter=100) # setup số cụm, số dòng làm mẫu, số vòng lặp tối đa để dừng
-            model = kmeans.fit(data)
+            model = kmeans.fit(clean_df)
             
             # Within Set Sum of Squared Errors
             cost = model.summary.trainingCost
             costs.append(cost)
             
             # Silhouette Score
-            predictions = model.transform(data)
+            predictions = model.transform(clean_df)
             evaluator = ClusteringEvaluator()
             silhouette = evaluator.evaluate(predictions)
             silhouette_scores.append(silhouette)
@@ -256,14 +253,15 @@ def find_optimal_clusters(data, max_k=None):
             break
     
     return costs, silhouette_scores
-
+spark.conf.set("spark.sql.debug.maxToStringFields", 2000)
 print("\n=== TÌM SỐ CLUSTER TỐI ưU ===")
 costs, silhouette_scores = find_optimal_clusters(scaled_data)
 
 # Tự động chọn K tối ưu dựa trên silhouette score
+import builtins
 if silhouette_scores:
-    optimal_k = silhouette_scores.index(max(silhouette_scores)) + 2
-    print(f"\nK tối ưu được chọn: {optimal_k} (Silhouette score cao nhất: {max(silhouette_scores):.3f})")
+    optimal_k = silhouette_scores.index(builtins.max(silhouette_scores)) + 2
+    print(f"\nK tối ưu được chọn: {optimal_k} (Silhouette score cao nhất: {builtins.max(silhouette_scores):.3f})")
 else:
     optimal_k = 3  # fallback
     print(f"\nSử dụng K mặc định: {optimal_k}")
