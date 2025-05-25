@@ -5,7 +5,9 @@ from pyspark.ml.feature import VectorAssembler, StandardScaler
 from pyspark.ml.clustering import KMeans
 from pyspark.ml.evaluation import ClusteringEvaluator
 from pyspark.ml import Pipeline
-
+import matplotlib.pyplot as plt
+import seaborn as sns
+import pandas as pd
 
 # Khởi tạo Spark Session
 spark = SparkSession.builder \
@@ -184,8 +186,7 @@ def prepare_features_for_clustering(df):
     clean_df = df.filter(col("total_vehicles") >= 2)  # Chỉ lấy bang có ít nhất 2 xe
     clean_df = clean_df.select(["state"] + feature_cols).na.drop()
     
-    print(f"Số bang sau khi lọc: {clean_df.count()}")
-    
+
     # Vector assembler tạo thành vector để tính Kmeans
     assembler = VectorAssembler(
         inputCols=feature_cols,
