@@ -380,12 +380,25 @@ cluster_names = {
 }
 
 final_results['cluster_name'] = final_results['prediction'].map(cluster_names)
-print(f"\n=== PHÂN VÙNG THỊ TRƯỜNG CUỐI CÙNG ===")
+
+print("\n" + "="*60)
+print("=== PHÂN VÙNG THỊ TRƯỜNG CUỐI CÙNG ===")
+print("="*60)
+
 for cluster_id, group in final_results.groupby('prediction'):
-    print(f"\n{cluster_names.get(cluster_id, f'Cluster {cluster_id}')}:")
-    print(f"Các bang: {', '.join(group['state'].tolist())}")
-    print(f"Đặc điểm: Giá TB ${group['avg_price'].mean():.0f}, "
-          f"Năm TB {group['avg_year'].mean():.1f}")
+    cluster_name = cluster_names.get(cluster_id, f"Cluster {cluster_id}")
+    states_list = ', '.join(sorted(group['state'].tolist()))
+    avg_price = group['avg_price'].mean()
+    avg_year = group['avg_year'].mean()
+    total_states = group['state'].nunique()
+
+    print(f"{cluster_name} (ID: {cluster_id})")
+    print(f"{'-'*60}")
+    print(f"Số bang: {total_states}")
+    print(f"Các bang: {states_list}")
+    print(f"Giá bán trung bình: ${avg_price:,.0f}")
+    print(f"Năm sản xuất trung bình: {avg_year:.1f}")
+    print("-"*60)
 
 # Lưu kết quả
 print("\n=== LƯU KẾT QUẢ ===")
@@ -410,3 +423,4 @@ print("- Giá trung bình")
 print("- Năm sản xuất trung bình")
 print("- Số km đã đi trung bình")
 print("- Tình trạng xe trung bình")
+
