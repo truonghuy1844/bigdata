@@ -7,7 +7,11 @@ from pyspark.sql import SparkSession
 # Tạo Spark session
 spark = SparkSession.builder.appName("CarPricePrediction").getOrCreate()
 
+<<<<<<< HEAD
 # Đọc dữ liệu
+=======
+# Đọc dữ liệu vào Spark DataFrame
+>>>>>>> 80f17db2fc1a128b0c707bd609e131c0326256fe
 df = spark.read.csv("car_prices.csv", header=True, inferSchema=True)
 
 # Áp dụng StringIndexer cho categorical columns
