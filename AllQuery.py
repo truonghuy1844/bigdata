@@ -239,7 +239,7 @@ LIMIT 20
 """
 spark.sql(query9).show()
 
-### Câu 10:
+### Câu 10: Tìm ra các seller (người bán) trong các phân khúc giá xe khác nhau (Cheap, Normal, Expensive) dựa trên giá trị thị trường MMR
 print("\n=== CÂU 10 ===")
 query10= """
 WITH car_value_group AS (
