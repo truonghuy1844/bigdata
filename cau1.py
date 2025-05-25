@@ -215,33 +215,40 @@ pipeline_model = pipeline.fit(geo_features)
 scaled_data = pipeline_model.transform(geo_features)
 
 # Tìm số cluster tối ưu bằng Elbow method
-def find_optimal_clusters(clean_df, max_k=None):
+import builtins
+from pyspark.ml.clustering import KMeans
+from pyspark.ml.evaluation import ClusteringEvaluator
+
+def find_optimal_clusters(data, max_k=None):
     """Tìm số cluster tối ưu"""
     
-    # Xác định max_k dựa trên số lượng bang
-    total_states = clean_df.count()
-    if max_k is None:
-        # Sử dụng built-in min function của Python
-        import builtins
-        max_k = builtins.min(8, total_states - 1)
-  # Không quá 8 và không vượt quá số bang
+    # Kiểm tra dữ liệu đầu vào
+    if data is None or data.count() == 0:
+        raise ValueError("Dữ liệu đầu vào rỗng hoặc không hợp lệ.")
     
-    print(f"Tìm kiếm K tối ưu từ 2 đến {max_k} cho {total_states} bang")
+    total_states = data.count()
+    print("Tổng số dòng dữ liệu:", total_states)
+    print("Kiểu dữ liệu:", type(total_states))
+    
+    if max_k is None:
+        if total_states < 2:
+            raise ValueError("Giá trị total_states không hợp lệ, cần >= 2 để phân cụm.")
+        max_k = builtins.min(8, total_states - 1)  # Không quá 8 và không vượt quá số mẫu
+    
+    print(f"Tìm kiếm K tối ưu từ 2 đến {max_k} cho {total_states} dòng dữ liệu")
     
     costs = []
     silhouette_scores = []
     
     for k in range(2, max_k + 1):
         try:
-            kmeans = KMeans(k=k, seed=42, maxIter=100) # setup số cụm, số dòng làm mẫu, số vòng lặp tối đa để dừng
-            model = kmeans.fit(clean_df)
+            kmeans = KMeans(k=k, seed=42, maxIter=100)
+            model = kmeans.fit(data)
             
-            # Within Set Sum of Squared Errors
             cost = model.summary.trainingCost
             costs.append(cost)
             
-            # Silhouette Score
-            predictions = model.transform(clean_df)
+            predictions = model.transform(data)
             evaluator = ClusteringEvaluator()
             silhouette = evaluator.evaluate(predictions)
             silhouette_scores.append(silhouette)
@@ -253,12 +260,13 @@ def find_optimal_clusters(clean_df, max_k=None):
             break
     
     return costs, silhouette_scores
-spark.conf.set("spark.sql.debug.maxToStringFields", 2000)
-print("\n=== TÌM SỐ CLUSTER TỐI ưU ===")
+
+print("\n=== TÌM SỐ CLUSTER TỐI ƯU ===")
 costs, silhouette_scores = find_optimal_clusters(scaled_data)
 
 # Tự động chọn K tối ưu dựa trên silhouette score
-import builtins
+import builtins  # Thêm dòng này ở đầu file nếu chưa có
+
 if silhouette_scores:
     optimal_k = silhouette_scores.index(builtins.max(silhouette_scores)) + 2
     print(f"\nK tối ưu được chọn: {optimal_k} (Silhouette score cao nhất: {builtins.max(silhouette_scores):.3f})")
@@ -280,14 +288,20 @@ result_df = predictions.select("state", "prediction", "total_vehicles", "avg_pri
 result_df.orderBy("prediction", "state").show(50)
 
 # Phân tích clusters
+from pyspark.sql.functions import col, avg, min, max, count
+
+# Định nghĩa feature_cols (danh sách các cột đã dùng trong VectorAssembler)
+feature_cols = ['year', 'odometer', 'condition', 'sellingprice']  # bạn có thể thay đổi theo dữ liệu thực tế
+
+# Hàm phân tích các cluster
 def analyze_clusters(predictions_df, feature_cols):
     """Phân tích đặc điểm của các clusters"""
     
     print("\n=== PHÂN TÍCH CHI TIẾT CÁC CLUSTERS ===")
     
     # Lấy tất cả các cột số để phân tích
-    numeric_cols = [col for col in predictions_df.columns 
-                   if col not in ['state', 'prediction', 'features', 'features_raw']]
+    numeric_cols = [c for c in predictions_df.columns 
+                   if c not in ['state', 'prediction', 'features', 'features_raw']]
     
     for cluster_id in range(optimal_k):
         print(f"\n{'='*50}")
@@ -299,10 +313,11 @@ def analyze_clusters(predictions_df, feature_cols):
         print(f"Các bang ({len(states_in_cluster)}): {', '.join(sorted(states_in_cluster))}")
         
         # Thống kê cho các cột quan trọng
-        important_stats_cols = [col for col in ["total_vehicles", "avg_price", "avg_year", 
-                                               "avg_mileage", "avg_condition", "brand_diversity",
-                                               "avg_car_age", "luxury_cars_pct"] 
-                               if col in numeric_cols]
+        important_stats_cols = [c for c in [
+            "total_vehicles", "avg_price", "avg_year", 
+            "avg_mileage", "avg_condition", "brand_diversity",
+            "avg_car_age", "luxury_cars_pct"
+        ] if c in numeric_cols]
         
         if important_stats_cols:
             stats_exprs = [count("*").alias("count")]
@@ -318,9 +333,9 @@ def analyze_clusters(predictions_df, feature_cols):
             print(f"\nSố bang: {stats['count']}")
             
             for col_name in important_stats_cols:
-                avg_val = stats.get(f"avg_{col_name}", 0)
-                min_val = stats.get(f"min_{col_name}", 0)
-                max_val = stats.get(f"max_{col_name}", 0)
+                avg_val = stats[f"avg_{col_name}"] if f"avg_{col_name}" in stats else 0
+                min_val = stats[f"min_{col_name}"] if f"min_{col_name}" in stats else 0
+                max_val = stats[f"max_{col_name}"] if f"max_{col_name}" in stats else 0
                 
                 if avg_val is not None:
                     if col_name in ["avg_price", "price_std"]:
@@ -331,6 +346,7 @@ def analyze_clusters(predictions_df, feature_cols):
                         print(f"{col_name}: TB={avg_val:.2f} ({min_val:.2f} - {max_val:.2f})")
                     else:
                         print(f"{col_name}: TB={avg_val:.1f} ({min_val:.1f} - {max_val:.1f})")
+
         
         # Hiển thị top bang trong cluster
         print(f"\nTop bang theo số lượng xe:")
@@ -339,7 +355,8 @@ def analyze_clusters(predictions_df, feature_cols):
                    .show(5, truncate=False)
 
 # Phân tích kết quả
-analyze_clusters(predictions)
+feature_cols = ['year', 'odometer', 'condition', 'sellingprice']  
+analyze_clusters(predictions, feature_cols)
 
 # Xuất kết quả để visualization
 print("\n=== XUẤT KẾT QUẢ ===")

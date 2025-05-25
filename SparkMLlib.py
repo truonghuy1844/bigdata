@@ -8,7 +8,7 @@ from pyspark.sql import SparkSession
 spark = SparkSession.builder.appName("CarPricePrediction").getOrCreate()
 
 # Đọc dữ liệu vào Spark DataFrame
-df = spark.read.csv("/mnt/data/car_prices.csv", header=True, inferSchema=True)
+df = spark.read.csv("car_prices.csv", header=True, inferSchema=True)
 
 # Tiền xử lý dữ liệu
 # Chuyển các cột categorical như 'make', 'model', 'color' thành các giá trị số (StringIndexer)
