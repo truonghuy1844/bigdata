@@ -1,7 +1,5 @@
 from pyspark.sql import SparkSession
 import os
-os.environ["PYSPARK_PYTHON"] = r"C:/Users/LENOVO/AppData/Local/Programs/Python/Python39/python.exe"
-os.environ["PYSPARK_DRIVER_PYTHON"] = r"C:/Users/LENOVO/AppData/Local/Programs/Python/Python39/python.exe"
 from pyspark.sql import SparkSession
 from pyspark.sql.functions import *
 from pyspark.sql.types import *
