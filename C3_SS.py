@@ -82,10 +82,7 @@ def main():
        metrics[name] = (rmse, mae, r2)
        print(f"{name:17s} → RMSE={rmse:.2f}, MAE={mae:.2f}, R2={r2:.2f}")
 
-       print("\nGiải thích các chỉ số đánh giá:")
-       print("- RMSE (Root Mean Squared Error): Sai số bình phương trung bình, càng nhỏ càng tốt.")
-       print("- MAE (Mean Absolute Error): Sai số tuyệt đối trung bình, càng nhỏ càng tốt.")
-       print("- R² (R-squared): Mức độ giải thích của mô hình với dữ liệu, càng gần 1 càng tốt.\n")
+      
    # 10. Chọn best_model
    models = {
    "LinearRegression": lr_model,
@@ -95,7 +92,12 @@ def main():
 
    best_name = min(metrics, key=lambda k: metrics[k][0])  # tên model có RMSE nhỏ nhất
    best_model = models[best_name]
-   print(f"\n⭐️  Best model: {best_name}\n")
+   print(f"\n  Best model: {best_name}\n")
+   
+   print("\nGiải thích các chỉ số đánh giá:")
+   print("- RMSE (Root Mean Squared Error): Sai số bình phương trung bình, càng nhỏ càng tốt.")
+   print("- MAE (Mean Absolute Error): Sai số tuyệt đối trung bình, càng nhỏ càng tốt.")
+   print("- R² (R-squared): Mức độ giải thích của mô hình với dữ liệu, càng gần 1 càng tốt.\n")
 
     # 11. Trực quan hóa kết quả so sánh giữa các mô hình
    
@@ -150,7 +152,7 @@ def main():
        try:
            year, odo, cond = int(year_in), float(odo_in), float(cond_in)
        except:
-           print("⚠️  Sai định dạng, thử lại.\n")
+           print("  Sai định dạng, thử lại.\n")
            continue
 
        car_age = 2025 - year
@@ -163,31 +165,7 @@ def main():
        feat = assembler.transform(new_df)
        pred = best_model.transform(feat).first().prediction
        print(f"→ Dựa trên mô hình Random Forest, giá dự báo của xe bạn vừa nhập là: {pred:,.0f} USD\n")
-       # 11. CLI predict
-   print("=== Car Price Estimator CLI ===")
-   while True:
-       year_in = input("Năm sản xuất (exit để thoát): ").strip()
-       if year_in.lower()=="exit": break
-       odo_in  = input("Odometer (km): ").strip()
-       cond_in = input("Condition (1–5): ").strip()
-       make_in = input("Hãng xe: ").strip()
-       try:
-           year, odo, cond = int(year_in), float(odo_in), float(cond_in)
-       except:
-           print(" Sai định dạng, vui lòng thử lại.\n"); continue
-
-
-       car_age = 2025 - year
-       tmp = spark.createDataFrame([(make_in,)], ["make"])
-       make_idx = make_indexer.transform(tmp).first().makeIndex
-       new_df = spark.createDataFrame(
-           [(float(car_age), odo, cond, make_idx)],
-           ["car_age","odometer","condition","makeIndex"]
-       )
-       feat = assembler.transform(new_df)
-       pred = best_model.transform(feat).first().prediction
-       print(f"→ Dựa trên mô hình Random Forest, giá dự báo của xe bạn vừa nhập là: {pred:,.0f} USD\n")
-       print("=== Cảm ơn bạn đã sử dụng! ===") 
+       
        
 if __name__ == "__main__":
     main()
