@@ -1,4 +1,3 @@
-# FILE NÀY TAO CHẠY ĐƯỢC, NẾU AN CHẠY THÌ MAYBE LỖI, CÒN NẾU HUY CHẠY THÌ ĐỔI ĐƯỜNG DẪN Ở DƯỚI 
 import os
 os.environ["PYSPARK_PYTHON"] = r"C:\Users\admin\AppData\Local\Programs\Python\Python39\python.exe"
 
